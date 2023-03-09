@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 # <HINT> Import any new Models here
-from .models import Course, Enrollment
+from .models import Course, Enrollment, Submission, Choice
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
@@ -10,6 +10,7 @@ from django.contrib.auth import login, logout, authenticate
 import logging
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
+import json
 # Create your views here.
 
 
@@ -112,7 +113,25 @@ def enroll(request, course_id):
          # Add each selected choice object to the submission object
          # Redirect to show_exam_result with the submission id
 def submit(request, course_id):
-    return
+    #This method may be vulnerable if the user change the ids in its requests. It may change the score of the test and show questions from another test...
+    if request.method == "POST":
+        course = get_object_or_404(Course, pk=course_id)
+        user = request.user
+        enrollment = Enrollment.objects.get(user=user, course=course)
+        a = Submission(enrollment=enrollment)
+        choices = []
+        a.save()
+
+        for arg in request.POST:
+            if arg.startswith("choice"):
+                choice_id = request.POST[arg][0]
+                choice = Choice.objects.get(pk=choice_id)
+                a.choices.add(choice)
+
+        
+        return HttpResponseRedirect(reverse(viewname='onlinecourse:exam_results', args=(course.id,a.id)))
+
+    return HttpResponseRedirect(reverse(viewname='onlinecourse:index', args=(course.id,)))
 
 
 # <HINT> A example method to collect the selected choices from the exam form from the request object
@@ -132,7 +151,11 @@ def submit(request, course_id):
         # Get the selected choice ids from the submission record
         # For each selected choice, check if it is a correct answer or not
         # Calculate the total score
-#def show_exam_result(request, course_id, submission_id):
+def show_exam_result(request, course_id, submission_id):
+    course = get_object_or_404(Course, pk=course_id)
+    user = request.user
+    context = {"course": course, "grade": 60}
+    return  render(request, 'onlinecourse/exam_result_bootstrap.html', context)
 
 
 
