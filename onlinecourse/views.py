@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
 # <HINT> Import any new Models here
-from .models import Course, Enrollment, Submission, Choice
+from .models import Course, Enrollment, Submission, Choice, Question
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
@@ -121,11 +121,10 @@ def submit(request, course_id):
         a = Submission(enrollment=enrollment)
         choices = []
         a.save()
-
         for arg in request.POST:
             if arg.startswith("choice"):
-                choice_id = request.POST[arg][0]
-                choice = Choice.objects.get(pk=choice_id)
+            
+                choice = Choice.objects.get(pk=request.POST[arg])
                 a.choices.add(choice)
 
         
@@ -154,7 +153,25 @@ def submit(request, course_id):
 def show_exam_result(request, course_id, submission_id):
     course = get_object_or_404(Course, pk=course_id)
     user = request.user
-    context = {"course": course, "grade": 60}
+    # .values_list('id', flat=True)
+    # s.choices.all()[0].question.id
+    submission = Submission.objects.get(pk=submission_id)
+    choices = submission.choices.all()
+    submission_dict = {}
+    for choice in choices:
+        if choice.question.id in submission_dict.keys() :
+            submission_dict[choice.question.id].append(choice.id)
+        else: 
+            submission_dict[choice.question.id] = [choice.id]
+    scores = []
+
+    for q in  submission_dict:
+        scores.append(Question.objects.get(pk=q).is_get_score(submission_dict[q]))
+    
+    grade = round(sum(scores)/len(submission_dict)*100, 2)
+    
+    context = {"course": course, "grade": grade}
+
     return  render(request, 'onlinecourse/exam_result_bootstrap.html', context)
 
 
