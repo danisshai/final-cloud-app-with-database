@@ -1,3 +1,4 @@
+{% load useful_filters %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -33,22 +34,53 @@
             {% endif %}
         </ul>
     </div>
-</nav>
+</nav> 
 
 <div class="container-fluid">
     {% if grade > 80 %}
     <div class="alert alert-success">
-       Score: {{ grade }}. Congratulations you passed this exam! 
+       <strong> Score: {{ grade }}/100.</strong> Congratulations you passed this exam! 
     </div>
     {% else %}
     <div class="alert alert-danger">
-        Score: {{ grade }}. You failed the exam, please review the topics and try again.
+    <strong>Score: {{ grade }}/100.</strong> You failed the exam, please review the topics and try again.
     </div>
     <a class="btn btn-link text-danger" href="{% url 'onlinecourse:course_details' course.id %}">Re-test</a>
     {% endif %}
         <div class="card-columns-vertical mt-1">
         <h5 class="">Exam results</h5>
-            <!--HINT Display exam results-->
+        {% for question in  course.question_set.all  %}
+        <div class="card mt-1">
+            <div class="card-header"><h5>{{ question.text}} </h5></div>
+            <div class="form-group">
+               {% for choice in question.choice_set.all %}
+                    
+                <div class="form-check">
+                    <label class="form-check-label">
+                        
+                               {% if choice.id in  submission_dict|get_item:question.id %}
+                               <input type="checkbox" name="choice_{{choice.id}}"
+                               class="form-check-input" id="{{choice.id}}"
+                               value="{{choice.id}}" disabled checked>{{ choice.text }}
+                                    {%if choice.is_correct %}
+                                    <span class="text-success font-weight-bold" > Correct Answer </span>
+                                    {% else %}
+                                    <span class="text-danger font-weight-bold"> Incorrect Answer </span>
+                                    {% endif%}
+                                {% else  %}
+                                <input type="checkbox" name="choice_{{choice.id}}"
+                               class="form-check-input" id="{{choice.id}}"
+                               value="{{choice.id}}" disabled >{{ choice.text }}
+                                    {%if choice.is_correct %}
+                                    <span class="text-primary font-weight-bold"> You did not select this </span>
+                                    {% endif%}
+                                {% endif%}
+                    </label>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
         </div>
     </div>
 </body>

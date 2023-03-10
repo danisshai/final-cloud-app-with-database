@@ -170,7 +170,7 @@ def show_exam_result(request, course_id, submission_id):
     
     grade = round(sum(scores)/len(submission_dict)*100, 2)
     
-    context = {"course": course, "grade": grade}
+    context = {"course": course, "grade": grade, "submission_dict": submission_dict }
 
     return  render(request, 'onlinecourse/exam_result_bootstrap.html', context)
 
